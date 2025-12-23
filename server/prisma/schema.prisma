@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  words       Word[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Word {
+  id           String         @id @default(cuid())
+  french       String
+  english      String
+  pronunciation String?
+  gender       String?        // "m" for masculine, "f" for feminine
+  categoryId   String
+  category     Category       @relation(fields: [categoryId], references: [id])
+  sentences    Sentence[]
+  progress     WordProgress[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([french, categoryId])
+}
+
+model Sentence {
+  id          String   @id @default(cuid())
+  french      String   // Full sentence with the word
+  english     String   // English translation
+  wordId      String
+  word        Word     @relation(fields: [wordId], references: [id])
+  blankIndex  Int      // Position where the blank should appear (word index)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WordProgress {
+  id             String   @id @default(cuid())
+  wordId         String
+  word           Word     @relation(fields: [wordId], references: [id])
+  timesCorrect   Int      @default(0)
+  timesIncorrect Int      @default(0)
+  learned        Boolean  @default(false)
+  lastPracticed  DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([wordId])
+}
+
+model PracticeSession {
+  id           String   @id @default(cuid())
+  type         String   // "vocabulary", "fill-blank", "matching", etc.
+  score        Int
+  totalQuestions Int
+  completedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
