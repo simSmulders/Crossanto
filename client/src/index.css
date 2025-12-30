@@ -130,3 +130,8 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+h1 {
+  font-size: x-large;
+  font-weight: bold;
+}
