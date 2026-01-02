@@ -1,60 +1,69 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
+import type { Category, Word } from "./types/index";
+import { useToast } from "./components/ui/use-toast";
 
 function Vocabulary() {
-
-    type Category = {
-        id: string;
-        name: string;
-        description: string;
-        icon: string;
-        createdAt: Date;
-        updatedAt: Date;
-    }
-
-    type Word = {
-		id: string;
-		french: string;
-		english: string;
-		pronunciation: string;
-		gender: string | null;
-		categoryId: string;
-		createdAt: string;
-		updatedAt: string;
-		category?: Category;
-    }
+    const { toast } = useToast();
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [words, setWords] = useState<Word[]>([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(true);
+    const [isLoadingWords, setIsLoadingWords] = useState<boolean>(false);
 
     useEffect(() => {
-        getData('categories');
+        fetchCategories();
     }, []);
 
-    async function getData(type: string, id: string | null = null) {
-        let url = `/api/vocabulary/${type}`;
-        if (id) {
-            url = url + `/${id}`
-        }
+    async function fetchCategories() {
+        const url = '/api/vocabulary/categories';
 
         try {
+             setIsLoadingCategories(true);
+
             const response = await fetch(url);
             if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const result = await response.json();
-            if (type === 'categories') {
-                setCategories(result);
-            }
-            if (type === 'category') {
-                setWords(result);
-                console.log('words', result);
-            }
+            setCategories(result);
         } catch (error) {
-            console.error(error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error instanceof Error ? error.message : "An error occurred while fetching data",
+            });
+        } finally {
+            setIsLoadingCategories(false)
+        }
+    }
+
+    async function fetchWordsByCategory(categoryId: string) {
+        const url = `/api/vocabulary/category/${categoryId}`
+
+        try {
+            if (!categoryId) {
+                setIsLoadingWords(true);
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+             setWords(result);
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error instanceof Error ? error.message : "An error occurred while fetching data",
+            });
+        } finally {
+            setIsLoadingWords(false);
         }
     }
 
@@ -64,30 +73,37 @@ function Vocabulary() {
             setWords([]);
         } else {
             setSelectedCategoryId(categoryId);
-            getData('category', categoryId);
+            fetchWordsByCategory(categoryId);
         }
     }
 
     return (
         <>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-                <div style={{ display: 'flex', flexDirection: 'row', padding: '12px', width: '100%', gap: '250px' }}>
-                    <Button style={{ display: 'flex', width: '100px' }} variant={'default'} onClick={() => history.back()}>Back</Button>
-                    <h1 style={{ display: 'flex', flex: 4 }}>Vocabulary</h1>
+            <div className="flex flex-col items-center">
+                <div className="flex flex-row p-3 w-full gap-[250px]">
+                    <Button className="flex w-[100px]" variant={'default'} onClick={() => history.back()}>Back</Button>
+                    <h1 className="flex flex-4">Vocabulary</h1>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap'}}>
+                {isLoadingCategories ? (
+                    <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p className="text-gray-600">Loading categories...</p>
+                        </div>
+                    </div>
+                ) : (
+                <div className="flex flex-row flex-wrap">
                     {categories.map((cat) => (
                         <div key={cat.id}>
                             <Card
-                                className="hover:shadow-lg transition-shadow cursor-pointer"
-                                style={{ width: '400px', margin: '12px'}}
+                                className="hover:shadow-lg transition-shadow cursor-pointer w-[400px] m-3"
                                 onClick={() => onClickCard(cat.id)}
                             >
                                 {selectedCategoryId !== cat.id &&
                                     <>
                                         <CardHeader>
                                             <CardTitle className="flex items-center gap-2">
-                                                {cat.name}
+                                                {cat.name} words: {cat._count.words}
                                             </CardTitle>
                                             <CardDescription>
                                                 {cat.description}
@@ -106,7 +122,11 @@ function Vocabulary() {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            {words.length > 0 ? (
+                                            {isLoadingWords ? (
+                                                <div className="flex items-center justify-center py-8">
+                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                                </div>
+                                            ) : words.length > 0 ? (
                                                 <ul>
                                                     {words.map((word) => (
                                                         <li key={word.id}>
@@ -117,7 +137,7 @@ function Vocabulary() {
                                                     ))}
                                                 </ul>
                                             ) : (
-                                                <p>Loading words...</p>
+                                                <p>No words found</p>
                                             )}
                                         </CardContent>
                                     </>
@@ -126,6 +146,7 @@ function Vocabulary() {
                         </div>
                     ))}
                 </div>
+                )}
             </div>
         </>
     )
