@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Routes, Route, Link } from 'react-router-dom';
 import Vocabulary from './Vocabulary';
+import Practice from './Practice';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
@@ -66,9 +67,11 @@ function App() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Button variant="outline" className="w-full">
-                        Start Practice
-                      </Button>
+                      <Link to="/practice">
+                        <Button variant="outline" className="w-full">
+                          Start Practice
+                        </Button>
+                      </Link>
                     </CardContent>
                   </Card>
 
@@ -117,6 +120,7 @@ function App() {
           </>
         }/>
         <Route path='/vocabulary' element={<Vocabulary />} />
+        <Route path='/practice' element={<Practice />} />
       </Routes>
       <Toaster />
     </div>

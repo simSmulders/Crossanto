@@ -19,3 +19,12 @@ export type Word = {
     updatedAt: string;
     category?: Category;
 }
+
+export type Sentence = {
+    id: string;
+    french: string;
+    english: string;
+    wordId: string;
+    blankIndex: number;
+    word: Word;
+}

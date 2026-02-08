@@ -3,11 +3,13 @@ import { prisma } from '../lib/prisma.js'
 
 export const exerciseRouter = Router()
 
-// Get fill-in-the-blank exercises
-exerciseRouter.get('/fill-blank', async (_req, res) => {
+// Get fill-in-the-blank exercises (optionally filtered by category)
+exerciseRouter.get('/fill-blank', async (req, res) => {
   try {
+    const categoryId = req.query.categoryId as string | undefined
     const sentences = await prisma.sentence.findMany({
-      include: { word: true },
+      where: categoryId ? { word: { categoryId } } : undefined,
+      include: { word: { include: { category: true } } },
     })
     res.json(sentences)
   } catch (error) {
@@ -15,12 +17,14 @@ exerciseRouter.get('/fill-blank', async (_req, res) => {
   }
 })
 
-// Get random fill-in-the-blank exercises
+// Get random fill-in-the-blank exercises (optionally filtered by category)
 exerciseRouter.get('/fill-blank/random/:count', async (req, res) => {
   try {
     const count = parseInt(req.params.count) || 5
+    const categoryId = req.query.categoryId as string | undefined
     const sentences = await prisma.sentence.findMany({
-      include: { word: true },
+      where: categoryId ? { word: { categoryId } } : undefined,
+      include: { word: { include: { category: true } } },
     })
     const shuffled = sentences.sort(() => 0.5 - Math.random())
     res.json(shuffled.slice(0, count))
